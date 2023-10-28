@@ -8,10 +8,24 @@ const API = 'http://localhost:5000';
 function App() {
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('');
-  const [todos, setTodos] = useState('');
+  const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmint = (e) => {
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+
+      const res = await fetch(API + '/todos')
+        .then((res) => res.json())
+        .then((data) => data)
+        .catch((err) => console.log(err));
+
+      setLoading(false);
+      setTodos(res);
+    };
+  }, []);
+
+  const handleSubmint = async (e) => {
     e.preventDefault();
     const todo = {
       id: Math.random(),
@@ -19,11 +33,23 @@ function App() {
       time,
       done: false,
     };
-    console.log(todo);
+    await fetch(API + '/todos', {
+      method: 'POST',
+      body: JSON.stringify(todo),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    setTodos((prevState) => [...prevState, todo]);
 
     setTitle('');
     setTime('');
   };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="App">
@@ -55,12 +81,24 @@ function App() {
               required
             />
           </div>
-          <input type="submit" value="Criar tarefa" />
+          <input type="submit" value="Enviar" />
         </form>
       </div>
       <div className="list-todo">
         <h2>Lista de Tarefas:</h2>
         {todos.length === 0 && <p> Não há Tarefas!!</p>}
+        {todos.map((todo) => (
+          <div className="todo" key={todo.id}>
+            <h3 className={todo.done ? 'todo-done' : ''}>{todo.title}</h3>
+            <p>Duração: {todo.time}</p>
+            <div className="actions">
+              <span>
+                {!todo.done ? <BsBookmarkCheck /> : <BsBookmarkCheckFill />}
+              </span>
+              <BsTrash />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
